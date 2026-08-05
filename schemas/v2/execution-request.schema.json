@@ -1,0 +1,422 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/execution-request.schema.json",
+  "title": "Interaction Uncertainty v0.2 VLAExecutionRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "execution_id",
+    "task_key",
+    "final_goal_prompt",
+    "context",
+    "selected_primitive",
+    "belief_summary",
+    "maximum_skill_steps",
+    "timeout_s",
+    "must_reobserve_after_nonterminal"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.execution-request.v2"},
+    "execution_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "final_goal_prompt": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "context": {"$ref": "#/$defs/policyContext"},
+    "selected_primitive": {"$ref": "#/$defs/primitiveCall"},
+    "belief_summary": {"$ref": "#/$defs/beliefSummary"},
+    "maximum_skill_steps": {"type": "integer", "minimum": 1},
+    "timeout_s": {"type": "number", "exclusiveMinimum": 0},
+    "must_reobserve_after_nonterminal": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "selected_primitive": {
+            "properties": {
+              "kind": {
+                "not": {"enum": ["DIRECT_ACT", "STOP_NOT_FOUND"]}
+              }
+            },
+            "required": ["kind"]
+          }
+        },
+        "required": ["selected_primitive"]
+      },
+      "then": {
+        "properties": {
+          "must_reobserve_after_nonterminal": {"const": true}
+        }
+      },
+      "else": {
+        "properties": {
+          "must_reobserve_after_nonterminal": {"const": false}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "visualAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token",
+        "frame_id",
+        "source",
+        "region_xyxy_normalized",
+        "affordances",
+        "attributes"
+      ],
+      "properties": {
+        "token": {"type": "string", "minLength": 1, "maxLength": 256},
+        "frame_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "source": {
+          "enum": [
+            "policy_vla",
+            "deployable_detector",
+            "public_user_reference",
+            "scripted_public_demo"
+          ]
+        },
+        "region_xyxy_normalized": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          ]
+        },
+        "affordances": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "attributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "publicObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_id",
+        "image_refs",
+        "proprioception",
+        "anchors",
+        "action_history"
+      ],
+      "properties": {
+        "frame_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "image_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {"type": "string", "minLength": 1, "maxLength": 33554432}
+        },
+        "proprioception": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"type": "number"}
+        },
+        "anchors": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/visualAnchor"}
+        },
+        "action_history": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"type": "string", "maxLength": 4096}
+        }
+      }
+    },
+    "policyContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "step_index", "prompt", "observation"],
+      "properties": {
+        "episode_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "step_index": {"type": "integer", "minimum": 0},
+        "prompt": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "observation": {"$ref": "#/$defs/publicObservation"}
+      }
+    },
+    "noParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {"type": {"const": "NONE"}}
+    },
+    "openParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "open_fraction"],
+      "properties": {
+        "type": {"const": "OPEN"},
+        "open_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "rotationParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "rotation_budget_degrees", "max_attempts"],
+      "properties": {
+        "type": {"const": "ROTATE"},
+        "rotation_budget_degrees": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 360
+        },
+        "max_attempts": {"type": "integer", "minimum": 1, "maximum": 8}
+      }
+    },
+    "inspectionParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_distance_m", "max_attempts"],
+      "properties": {
+        "type": {"const": "INSPECT"},
+        "target_distance_m": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.6
+        },
+        "max_attempts": {"type": "integer", "minimum": 1, "maximum": 8}
+      }
+    },
+    "displacementParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "maximum_displacement_m", "direction_policy"],
+      "properties": {
+        "type": {"const": "DISPLACE"},
+        "maximum_displacement_m": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.4
+        },
+        "direction_policy": {
+          "enum": ["PUBLIC_FREE_SPACE", "REGISTERED_DROP_ZONE"]
+        }
+      }
+    },
+    "primitiveCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "task_key",
+        "kind",
+        "source_anchor",
+        "destination_anchor",
+        "parameters",
+        "addresses_need_ids",
+        "proposal_score",
+        "proposer_id",
+        "stop_condition",
+        "terminal_decision"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "task_key": {"$ref": "#/$defs/taskKey"},
+        "kind": {
+          "enum": [
+            "DIRECT_ACT",
+            "OPEN_CONTAINER",
+            "PULL_DRAWER",
+            "UNCOVER",
+            "CLEAR_OCCLUDER",
+            "PUSH_ASIDE",
+            "BRING_CLOSER",
+            "ROTATE_TO_LABEL",
+            "PICK_AND_INSPECT",
+            "STOP_NOT_FOUND"
+          ]
+        },
+        "source_anchor": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/visualAnchor"}]
+        },
+        "destination_anchor": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/visualAnchor"}]
+        },
+        "parameters": {
+          "oneOf": [
+            {"$ref": "#/$defs/noParameters"},
+            {"$ref": "#/$defs/openParameters"},
+            {"$ref": "#/$defs/rotationParameters"},
+            {"$ref": "#/$defs/inspectionParameters"},
+            {"$ref": "#/$defs/displacementParameters"}
+          ]
+        },
+        "addresses_need_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "proposal_score": {"type": "number", "minimum": 0},
+        "proposer_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "stop_condition": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "terminal_decision": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["DIRECT_ACT", "NOT_FOUND"]}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"kind": {"const": "DIRECT_ACT"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {
+                "allOf": [
+                  {"$ref": "#/$defs/visualAnchor"},
+                  {
+                    "properties": {
+                      "affordances": {
+                        "contains": {"const": "task_target"},
+                        "minContains": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              "parameters": {"$ref": "#/$defs/noParameters"},
+              "addresses_need_ids": {"maxItems": 0},
+              "terminal_decision": {"const": "DIRECT_ACT"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"kind": {"const": "STOP_NOT_FOUND"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"type": "null"},
+              "destination_anchor": {"type": "null"},
+              "parameters": {"$ref": "#/$defs/noParameters"},
+              "addresses_need_ids": {"maxItems": 0},
+              "terminal_decision": {"const": "NOT_FOUND"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["OPEN_CONTAINER", "PULL_DRAWER"]}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/openParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"kind": {"const": "ROTATE_TO_LABEL"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/rotationParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["BRING_CLOSER", "PICK_AND_INSPECT"]}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/inspectionParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["UNCOVER", "CLEAR_OCCLUDER", "PUSH_ASIDE"]
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/displacementParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "beliefSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hypotheses",
+        "sufficiency_mean",
+        "sufficiency_vacuity",
+        "history_digest",
+        "decision_margin"
+      ],
+      "properties": {
+        "hypotheses": {
+          "type": "object",
+          "minProperties": 2,
+          "maxProperties": 128,
+          "patternProperties": {
+            "^.{1,256}$": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "additionalProperties": false
+        },
+        "sufficiency_mean": {"type": "number", "minimum": 0, "maximum": 1},
+        "sufficiency_vacuity": {"type": "number", "minimum": 0, "maximum": 1},
+        "history_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "decision_margin": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

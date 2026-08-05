@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/evidence-packet.schema.json",
+  "title": "Interaction Uncertainty v0.2 EvidencePacket",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "task_key",
+    "observation_digest",
+    "hypothesis_labels",
+    "hypothesis_evidence",
+    "sufficiency_evidence",
+    "deficits",
+    "model_stamp",
+    "correlation_group",
+    "content_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.evidence.v2"},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "observation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "hypothesis_labels": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "hypothesis_evidence": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "items": {"type": "number", "minimum": 0}
+    },
+    "sufficiency_evidence": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"type": "number", "minimum": 0}
+    },
+    "deficits": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/deficit"}
+    },
+    "model_stamp": {"$ref": "#/$defs/modelStamp"},
+    "correlation_group": {"type": "string", "minLength": 1, "maxLength": 256},
+    "content_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1},
+        "ontology_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "modelStamp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_sha256", "calibration_id"],
+      "properties": {
+        "model_id": {"type": "string", "minLength": 1},
+        "model_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "calibration_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "beta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alpha", "beta", "prior_weight", "base_rate"],
+      "properties": {
+        "alpha": {"type": "number", "exclusiveMinimum": 0},
+        "beta": {"type": "number", "exclusiveMinimum": 0},
+        "prior_weight": {"type": "number", "exclusiveMinimum": 0},
+        "base_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "deficit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deficit_id",
+        "kind",
+        "anchor_token",
+        "probability",
+        "prompt_relevance",
+        "rationale"
+      ],
+      "properties": {
+        "deficit_id": {"type": "string", "minLength": 1},
+        "kind": {
+          "enum": [
+            "IDENTITY_AMBIGUITY",
+            "PRESENCE_UNCERTAINTY",
+            "OCCLUDED_REGION",
+            "UNOBSERVED_SURFACE",
+            "LOW_RESOLUTION",
+            "SEARCH_COVERAGE_GAP",
+            "ACCESS_BLOCKED"
+          ]
+        },
+        "anchor_token": {"type": "string", "minLength": 1},
+        "probability": {"$ref": "#/$defs/beta"},
+        "prompt_relevance": {"type": "number", "minimum": 0, "maximum": 1},
+        "rationale": {"type": "string", "maxLength": 4096}
+      }
+    }
+  }
+}

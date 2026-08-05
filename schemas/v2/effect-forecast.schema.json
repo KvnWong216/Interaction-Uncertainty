@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/effect-forecast.schema.json",
+  "title": "Interaction Uncertainty v0.2 CandidateEffectForecast",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_key",
+    "candidate_id",
+    "hypothesis_labels",
+    "transition_matrix",
+    "outcomes",
+    "critic_uncertainty",
+    "model_stamp",
+    "rng_seed"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.effect.v2"},
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "candidate_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "hypothesis_labels": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "transition_matrix": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 128,
+        "items": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/outcome"}
+    },
+    "critic_uncertainty": {"type": "number", "minimum": 0, "maximum": 1},
+    "model_stamp": {"$ref": "#/$defs/modelStamp"},
+    "rng_seed": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1},
+        "ontology_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "modelStamp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_sha256", "calibration_id"],
+      "properties": {
+        "model_id": {"type": "string", "minLength": 1},
+        "model_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "calibration_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome_id",
+        "likelihood_by_post_state",
+        "execution_status",
+        "sufficiency_evidence",
+        "resolves_need_ids",
+        "action_cost",
+        "physical_risk",
+        "disturbance"
+      ],
+      "properties": {
+        "outcome_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "likelihood_by_post_state": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 128,
+          "items": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "execution_status": {"enum": ["SUCCEEDED", "FAILED", "PARTIAL"]},
+        "sufficiency_evidence": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"type": "number", "minimum": 0}
+        },
+        "resolves_need_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "action_cost": {"type": "number", "minimum": 0},
+        "physical_risk": {"type": "number", "minimum": 0},
+        "disturbance": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

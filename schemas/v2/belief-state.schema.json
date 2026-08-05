@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/belief-state.schema.json",
+  "title": "Interaction Uncertainty v0.2 BeliefState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_key",
+    "episode_id",
+    "step_index",
+    "posterior",
+    "observation_digest",
+    "accepted_event_ids",
+    "correlation_group",
+    "filter_mode",
+    "history_digest"
+  ],
+  "properties": {
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "episode_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "step_index": {"type": "integer", "minimum": 0},
+    "posterior": {"$ref": "#/$defs/taskBelief"},
+    "observation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "accepted_event_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    },
+    "correlation_group": {"type": "string", "minLength": 1, "maxLength": 256},
+    "filter_mode": {"enum": ["REPLACE", "DISCOUNTED_EVIDENCE"]},
+    "history_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "beta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alpha", "beta", "prior_weight", "base_rate"],
+      "properties": {
+        "alpha": {"type": "number", "exclusiveMinimum": 0},
+        "beta": {"type": "number", "exclusiveMinimum": 0},
+        "prior_weight": {"type": "number", "exclusiveMinimum": 0},
+        "base_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "deficit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deficit_id",
+        "kind",
+        "anchor_token",
+        "probability",
+        "prompt_relevance",
+        "rationale"
+      ],
+      "properties": {
+        "deficit_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "kind": {
+          "enum": [
+            "IDENTITY_AMBIGUITY",
+            "PRESENCE_UNCERTAINTY",
+            "OCCLUDED_REGION",
+            "UNOBSERVED_SURFACE",
+            "LOW_RESOLUTION",
+            "SEARCH_COVERAGE_GAP",
+            "ACCESS_BLOCKED"
+          ]
+        },
+        "anchor_token": {"type": "string", "minLength": 1, "maxLength": 256},
+        "probability": {"$ref": "#/$defs/beta"},
+        "prompt_relevance": {"type": "number", "minimum": 0, "maximum": 1},
+        "rationale": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "dirichlet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["labels", "alpha", "base_rate", "prior_weight"],
+      "properties": {
+        "labels": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "alpha": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 128,
+          "items": {"type": "number", "exclusiveMinimum": 0}
+        },
+        "base_rate": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 128,
+          "items": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "prior_weight": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "taskBelief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prompt",
+        "hypotheses",
+        "sufficiency",
+        "deficits",
+        "provenance",
+        "tags"
+      ],
+      "properties": {
+        "prompt": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "hypotheses": {"$ref": "#/$defs/dirichlet"},
+        "sufficiency": {"$ref": "#/$defs/beta"},
+        "deficits": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/deficit"}
+        },
+        "provenance": {"type": "string", "minLength": 1, "maxLength": 256},
+        "tags": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "maxLength": 4096}
+        }
+      }
+    }
+  }
+}

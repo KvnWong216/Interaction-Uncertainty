@@ -1,0 +1,43 @@
+Interaction-Uncertainty
+Copyright 2026 Interactive Perception Research Team
+
+This product is an independent implementation of a prompt-conditioned
+belief-to-primitive research interface. See LICENSE for the terms governing
+this repository.
+
+Research attribution
+--------------------
+
+The documentation cites prior work on POMDPs, active perception, value of
+information, Subjective Logic, Evidential Deep Learning, CNABU,
+uncertainty-informed manipulation and vision-language-action models. Full
+bibliographic entries are in references.bib.
+
+No source code, pretrained model, mesh, image, dataset or other asset from the
+following projects is included in this repository:
+
+* NilsDengler/manipulation_enhanced_map_prediction (CNABU supplementary code)
+* NilsDengler/view-point-pushing
+* Joringell/ASA (Act-Sense-Act / CoMe-VLA)
+* openvla/openvla or moojink/openvla-oft
+* octo-models/octo
+* google-research/saycan
+
+At the audit date (2026-08-04), the root repositories for CNABU's
+manipulation_enhanced_map_prediction and view-point-pushing did not include a
+license granting code reuse. This repository therefore uses only a clean-room
+implementation of mathematical and interface ideas described in the published
+papers; none of those repositories' code or assets has been copied.
+
+Optional dependency
+-------------------
+
+pomdp_py is offered only as an optional, separately installed dependency. It
+is distributed by its authors under the MIT License:
+https://github.com/h2r/pomdp-py/blob/main/LICENSE
+
+Software and model licenses are separate. In particular, OpenVLA source code
+is MIT-licensed while released model weights may inherit restrictions from
+their base models. Users are responsible for reviewing the licenses of all
+optional code, weights, datasets, robot assets and simulator resources they
+connect to this project.

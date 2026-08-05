@@ -1,0 +1,18 @@
+{
+  "frame_id": "wrist_t000",
+  "image_refs": [
+    "data:application/x-npy;sha256=2412f00e81eb51fac5bd31058468888e3b819e3c4bbec9d7a6ddfc1a96a70546;base64,k05VTVBZAQB2AHsnZGVzY3InOiAnfHUxJywgJ2ZvcnRyYW5fb3JkZXInOiBGYWxzZSwgJ3NoYXBlJzogKDIsIDIsIDMpLCB9ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAoAAAAAAAAAAAAAAAA="
+  ],
+  "proprioception": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+  "anchors": [
+    {
+      "token": "track_container_0",
+      "frame_id": "wrist_t000",
+      "source": "deployable_detector",
+      "region_xyxy_normalized": [0.4, 0.08, 0.94, 0.95],
+      "affordances": ["openable"],
+      "attributes": ["opaque_container"]
+    }
+  ],
+  "action_history": []
+}

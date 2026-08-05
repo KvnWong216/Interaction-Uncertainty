@@ -1,0 +1,22 @@
+{
+  "key": {
+    "task_id": "orange-juice-to-basket",
+    "prompt_digest": "be11b34c8664ebe790503754ebcb8cb9024b96081564348e21df066cfbcd6b88",
+    "ontology_id": "target-access-state",
+    "ontology_version": "1.0.0"
+  },
+  "final_goal_prompt": "Place the orange juice in the wicker basket.",
+  "hypotheses": [
+    "TARGET_VISIBLE_AND_GROUNDED",
+    "TARGET_HIDDEN_IN_CONTAINER",
+    "TARGET_ELSEWHERE_OR_UNSEEN",
+    "TARGET_ABSENT_AFTER_BOUNDED_SEARCH"
+  ],
+  "terminal_decisions": ["DIRECT_ACT", "NOT_FOUND"],
+  "loss_matrix": [
+    [0.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 0.0]
+  ],
+  "base_rate": [0.25, 0.25, 0.25, 0.25],
+  "required_attributes": ["orange juice", "wicker basket"]
+}

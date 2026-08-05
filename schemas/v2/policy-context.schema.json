@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/policy-context.schema.json",
+  "title": "Interaction Uncertainty v0.2 PolicyContext",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["episode_id", "step_index", "prompt", "observation"],
+  "properties": {
+    "episode_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "step_index": {"type": "integer", "minimum": 0},
+    "prompt": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "observation": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/public-observation.schema.json"
+    }
+  }
+}

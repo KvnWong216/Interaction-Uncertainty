@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and development dependencies
+        run: python -m pip install -e '.[dev]'
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest
+
+      - name: Parse JSON schemas
+        run: python -c "import json, pathlib; [json.loads(p.read_text()) for p in pathlib.Path('schemas').rglob('*.json')]"
+
+      - name: Validate v0.2 TaskSpec example
+        run: interaction-uncertainty validate-task --task examples/v2/task_orange_juice.json
+
+      - name: Build release wheel
+        if: matrix.python-version == '3.12'
+        run: python -m pip wheel --no-deps --no-build-isolation . -w wheelhouse
+
+      - name: Audit wheel contracts and legacy exclusions
+        if: matrix.python-version == '3.12'
+        run: >-
+          python -c "from pathlib import Path; import zipfile;
+          wheel=next(Path('wheelhouse').glob('*.whl'));
+          names=set(zipfile.ZipFile(wheel).namelist());
+          required=('schemas/v2/evidence-request.schema.json',
+          'schemas/v2/effect-response.schema.json',
+          'schemas/v2/action-chunk.schema.json',
+          'schemas/v2/policy-request.schema.json',
+          'schemas/v2/policy-response.schema.json',
+          'examples/v2/task_orange_juice.json');
+          assert all(any(name.endswith(item) for name in names) for item in required);
+          forbidden=('interaction_uncertainty/config.py',
+          'interaction_uncertainty/decision.py',
+          'interaction_uncertainty/orchestrator.py',
+          'interaction_uncertainty/proposers.py');
+          assert not any(item in names for item in forbidden);
+          print(wheel, len(names))"

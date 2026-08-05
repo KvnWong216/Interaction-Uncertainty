@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: >-
+  If you use this research software, please cite the software release and the
+  prior methods relevant to the components you use; canonical references are
+  listed in references.bib.
+title: "Interaction-Uncertainty: A Prompt-Conditioned Belief-to-Primitive Bridge"
+type: software
+authors:
+  - name: "Interactive Perception Research Team"
+version: 0.2.0
+date-released: 2026-08-04
+license: Apache-2.0
+abstract: >-
+  A model-agnostic, fixed-camera research interface that converts
+  prompt-conditioned task beliefs and action-conditioned outcome predictions
+  into grounded interactive-manipulation or information-enrichment primitives,
+  without exposing simulator-privileged semantic identifiers to the policy.
+keywords:
+  - interactive perception
+  - robot manipulation
+  - uncertainty quantification
+  - Bayes risk
+  - vision-language-action models
+  - benchmark

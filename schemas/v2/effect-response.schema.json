@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/effect-response.schema.json",
+  "title": "Interaction Uncertainty v0.2 Action-Outcome Service Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_key", "observation_digest", "forecasts"],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.effect-response.v2"},
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "observation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "forecasts": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "https://interactive-perception.dev/schemas/v2/effect-forecast.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    }
+  }
+}

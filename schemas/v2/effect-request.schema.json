@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/effect-request.schema.json",
+  "title": "Interaction Uncertainty v0.2 Action-Outcome Service Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task",
+    "context",
+    "belief",
+    "needs",
+    "candidates",
+    "observation_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.effect-request.v2"},
+    "task": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/task-spec.schema.json"
+    },
+    "context": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/policy-context.schema.json"
+    },
+    "belief": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/belief-state.schema.json"
+    },
+    "needs": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "https://interactive-perception.dev/schemas/v2/information-need.schema.json"
+      }
+    },
+    "candidates": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/candidate-set.schema.json"
+    },
+    "observation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

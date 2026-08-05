@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/trace-event.schema.json",
+  "title": "Interaction Uncertainty v0.2 TraceEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "parent_event_id",
+    "event_type",
+    "episode_id",
+    "step_index",
+    "task_key",
+    "timestamp_utc",
+    "payload",
+    "content_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.trace-event.v2"},
+    "event_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "parent_event_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      ]
+    },
+    "event_type": {"type": "string", "minLength": 1, "maxLength": 256},
+    "episode_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "step_index": {"type": "integer", "minimum": 0},
+    "task_key": {"$ref": "#/$defs/taskKey"},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "payload": {"$ref": "#/$defs/jsonObject"},
+    "content_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "jsonObject": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {"$ref": "#/$defs/jsonValue"}
+      },
+      "additionalProperties": false
+    },
+    "jsonValue": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "number"},
+        {"type": "string", "maxLength": 33554432},
+        {
+          "type": "array",
+          "maxItems": 65536,
+          "items": {"$ref": "#/$defs/jsonValue"}
+        },
+        {"$ref": "#/$defs/jsonObject"}
+      ]
+    }
+  }
+}

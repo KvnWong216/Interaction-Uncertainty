@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/task-spec.schema.json",
+  "title": "Interaction Uncertainty v0.2 TaskSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "key",
+    "final_goal_prompt",
+    "hypotheses",
+    "terminal_decisions",
+    "loss_matrix",
+    "base_rate",
+    "required_attributes"
+  ],
+  "properties": {
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "final_goal_prompt": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "hypotheses": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "terminal_decisions": {
+      "type": "array",
+      "const": ["DIRECT_ACT", "NOT_FOUND"]
+    },
+    "loss_matrix": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 128,
+        "items": {"type": "number", "minimum": 0}
+      }
+    },
+    "base_rate": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 128,
+      "items": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+    },
+    "required_attributes": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  }
+}

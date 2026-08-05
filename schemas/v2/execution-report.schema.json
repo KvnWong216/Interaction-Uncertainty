@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/execution-report.schema.json",
+  "title": "Interaction Uncertainty v0.2 ExecutionReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "execution_id",
+    "candidate_id",
+    "primitive_kind",
+    "result",
+    "executed_steps",
+    "termination_reason",
+    "next_public_observation_required",
+    "executor_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.execution-report.v2"},
+    "execution_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidate_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "primitive_kind": {
+      "enum": [
+        "DIRECT_ACT",
+        "OPEN_CONTAINER",
+        "PULL_DRAWER",
+        "UNCOVER",
+        "CLEAR_OCCLUDER",
+        "PUSH_ASIDE",
+        "BRING_CLOSER",
+        "ROTATE_TO_LABEL",
+        "PICK_AND_INSPECT",
+        "STOP_NOT_FOUND"
+      ]
+    },
+    "result": {"enum": ["SUCCEEDED", "FAILED", "REJECTED", "TIMED_OUT"]},
+    "executed_steps": {"type": "integer", "minimum": 0},
+    "termination_reason": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "next_public_observation_required": {"type": "boolean"},
+    "executor_id": {"type": "string", "minLength": 1, "maxLength": 256}
+  }
+}

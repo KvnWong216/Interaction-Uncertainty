@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/policy-request.schema.json",
+  "title": "Interaction Uncertainty v0.2 Policy Service Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "execution_request"],
+  "properties": {
+    "schema_version": {"const": "interaction-uncertainty.policy-request.v2"},
+    "execution_request": {
+      "$ref": "https://interactive-perception.dev/schemas/v2/execution-request.schema.json"
+    }
+  }
+}

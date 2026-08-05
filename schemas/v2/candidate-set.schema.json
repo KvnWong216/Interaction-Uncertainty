@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-perception.dev/schemas/v2/candidate-set.schema.json",
+  "title": "Interaction Uncertainty v0.2 CandidateSet",
+  "$ref": "#/$defs/candidateSet",
+  "$defs": {
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "prompt_digest", "ontology_id", "ontology_version"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "prompt_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ontology_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ontology_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "visualAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token",
+        "frame_id",
+        "source",
+        "region_xyxy_normalized",
+        "affordances",
+        "attributes"
+      ],
+      "properties": {
+        "token": {"type": "string", "minLength": 1, "maxLength": 256},
+        "frame_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "source": {
+          "enum": [
+            "policy_vla",
+            "deployable_detector",
+            "public_user_reference",
+            "scripted_public_demo"
+          ]
+        },
+        "region_xyxy_normalized": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          ]
+        },
+        "affordances": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "attributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "noParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {"type": {"const": "NONE"}}
+    },
+    "openParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "open_fraction"],
+      "properties": {
+        "type": {"const": "OPEN"},
+        "open_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "rotationParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "rotation_budget_degrees", "max_attempts"],
+      "properties": {
+        "type": {"const": "ROTATE"},
+        "rotation_budget_degrees": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 360
+        },
+        "max_attempts": {"type": "integer", "minimum": 1, "maximum": 8}
+      }
+    },
+    "inspectionParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_distance_m", "max_attempts"],
+      "properties": {
+        "type": {"const": "INSPECT"},
+        "target_distance_m": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.6
+        },
+        "max_attempts": {"type": "integer", "minimum": 1, "maximum": 8}
+      }
+    },
+    "displacementParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "maximum_displacement_m", "direction_policy"],
+      "properties": {
+        "type": {"const": "DISPLACE"},
+        "maximum_displacement_m": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.4
+        },
+        "direction_policy": {
+          "enum": ["PUBLIC_FREE_SPACE", "REGISTERED_DROP_ZONE"]
+        }
+      }
+    },
+    "primitiveCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "task_key",
+        "kind",
+        "source_anchor",
+        "destination_anchor",
+        "parameters",
+        "addresses_need_ids",
+        "proposal_score",
+        "proposer_id",
+        "stop_condition",
+        "terminal_decision"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "task_key": {"$ref": "#/$defs/taskKey"},
+        "kind": {
+          "enum": [
+            "DIRECT_ACT",
+            "OPEN_CONTAINER",
+            "PULL_DRAWER",
+            "UNCOVER",
+            "CLEAR_OCCLUDER",
+            "PUSH_ASIDE",
+            "BRING_CLOSER",
+            "ROTATE_TO_LABEL",
+            "PICK_AND_INSPECT",
+            "STOP_NOT_FOUND"
+          ]
+        },
+        "source_anchor": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/visualAnchor"}]
+        },
+        "destination_anchor": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/visualAnchor"}]
+        },
+        "parameters": {
+          "oneOf": [
+            {"$ref": "#/$defs/noParameters"},
+            {"$ref": "#/$defs/openParameters"},
+            {"$ref": "#/$defs/rotationParameters"},
+            {"$ref": "#/$defs/inspectionParameters"},
+            {"$ref": "#/$defs/displacementParameters"}
+          ]
+        },
+        "addresses_need_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "proposal_score": {"type": "number", "minimum": 0},
+        "proposer_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "stop_condition": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "terminal_decision": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["DIRECT_ACT", "NOT_FOUND"]}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"kind": {"const": "DIRECT_ACT"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {
+                "allOf": [
+                  {"$ref": "#/$defs/visualAnchor"},
+                  {
+                    "properties": {
+                      "affordances": {
+                        "contains": {"const": "task_target"},
+                        "minContains": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              "parameters": {"$ref": "#/$defs/noParameters"},
+              "addresses_need_ids": {"maxItems": 0},
+              "terminal_decision": {"const": "DIRECT_ACT"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"kind": {"const": "STOP_NOT_FOUND"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"type": "null"},
+              "destination_anchor": {"type": "null"},
+              "parameters": {"$ref": "#/$defs/noParameters"},
+              "addresses_need_ids": {"maxItems": 0},
+              "terminal_decision": {"const": "NOT_FOUND"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["OPEN_CONTAINER", "PULL_DRAWER"]}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/openParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"kind": {"const": "ROTATE_TO_LABEL"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/rotationParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["BRING_CLOSER", "PICK_AND_INSPECT"]}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/inspectionParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["UNCOVER", "CLEAR_OCCLUDER", "PUSH_ASIDE"]
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "source_anchor": {"$ref": "#/$defs/visualAnchor"},
+              "parameters": {"$ref": "#/$defs/displacementParameters"},
+              "addresses_need_ids": {"minItems": 1},
+              "terminal_decision": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "candidateSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_key", "observation_frame_id", "candidates"],
+      "properties": {
+        "task_key": {"$ref": "#/$defs/taskKey"},
+        "observation_frame_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/primitiveCall"}
+        }
+      },
+      "allOf": [
+        {
+          "properties": {
+            "candidates": {
+              "contains": {
+                "type": "object",
+                "properties": {"kind": {"const": "STOP_NOT_FOUND"}},
+                "required": ["kind"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}
