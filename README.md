@@ -174,7 +174,38 @@ J_q(a)={}&\sum_y p(y\mid b_t,a)R_q^{\mathrm{rule}}(a,y)\\
 | VLA/skill 边界 | `v2/execution.py` | `VLAExecutionRequest`, `ActionChunk`, `ExecutionReport` |
 | 远程 GPU 模型 | `v2/remote.py` | `RemoteEvidenceModel`, `RemoteActionOutcomeCritic`, `RemotePolicyBackend` |
 | LIBERO 公共观测 | `v2/libero.py` | `LiberoPublicObservationAdapter` |
+| baseline VLA 的 belief 读出 | `v2/vla_bridge.py` | `ActionChunkSample`, `HypothesisAnchor`, `action_induced_belief` |
 | 链接式完整性 trace | `v2/trace.py` | hash-linked `TraceEvent`, JSONL sink, `verify_trace_chain` |
+
+### 粗粒度动作空间 A
+
+`v2/primitives.py` 中的 `PrimitiveKind` 是**执行词表**：它区分抽屉与铰链门，因为两者需要不同参数和不同 affordance。但这个分辨率无法用来给单体 VLA 打分——后者只输出关节增量，没有任何原语标签。
+
+`CoarsePrimitive` 是所有方法共用的**报告词表**：
+
+```text
+A = { ACT, NOT_FOUND, ROTATE, MOVE_CLOSER, REMOVE_OCCLUDER }
+```
+
+划分依据是**动作产生什么信息**，而非动作如何执行。因此容器开启被并入 `REMOVE_OCCLUDER`——抽屉面板就是一个恰好装在关节上的遮挡物。`to_coarse` 提供 `PrimitiveKind → CoarsePrimitive` 的全射投影，`PRIMITIVES_BY_COARSE` 是反向映射。
+
+`NOT_FOUND` 没有连续动作解码。这是结论而非缺口：没有弃权输出通道的策略无法弃权，因此它在该成员上的证据结构性为零。
+
+### 用动作采样读出 baseline 的 belief
+
+前馈式 VLA 不暴露任何 belief，因此"策略是否意识到自己缺证据"这个问题无法用它自己的输出来问。`v2/vla_bridge.py` 提供缺失的测量装置。
+
+openpi 的 policy server 每次 `infer` 都会 split PRNG，所以在**同一个冻结观测**上重复查询 `n` 次会得到 `n` 个独立的 flow-matching 采样。这些 chunk 在任务相关锚点上的散布，是策略已经承诺了什么的可观测代理。把这个散布转成 subjective-logic 证据后，`uncertainty.py` 里现成的 vacuity / dissonance / predictive entropy / Dirichlet MI 就能直接算在一个从未被设计来报告它们的 baseline 上。
+
+三条性质决定了结果该怎么读：
+
+- **证据总量不等于采样数。** 每个样本按其运动决断度贡献证据。若证据只是计数，`S = n + K` 恒定，vacuity 将完全不含关于观测的信息。
+- **锚点是 evaluator-private 的。** 锚点世界坐标来自仿真器状态，只用来**读取**策略，绝不用来告知策略；它不进入任何 policy observation。这与 experiment contract 对 segmentation mask 和物体位姿画的边界一致。
+- **得到的 belief 是诊断量，不是策略自己的置信度。** 低 vacuity 表示策略已经承诺，不表示它正确，更不表示它内部表征了证据。本项目的核心假设恰恰是：单体 VLA 在持有空 belief 的同时报告低 vacuity——在没有证据的情况下自信地承诺。
+
+`sufficiency` 是**行为层面**的代理：它记录样本在决定移动之后彼此有多一致，不说明观测是否真的含有任务所需信息，不可当作策略自己的 sufficiency 估计。
+
+配套的场景、rollout 循环与 baseline 测量在 [Interactive-Perception](https://github.com/KvnWong216/Interactive-Perception)。两边共用同一条测量路径：baseline 与本方法由同一份代码打分，而不是由两份碰巧一致的实现。
 
 共享的稳定数学/安全基础位于：
 
@@ -424,5 +455,7 @@ LIBERO 中可从同一初始 simulator snapshot 克隆多个 episode，分别执
 ## 当前状态
 
 - 完成：v0.2 typed contracts、stateful controller、belief filter、need extraction、typed proposer、exact (T/Z) rollout、risk reranker、remote model adapters、LIBERO public adapter、VLA request/report、trace 与单元/集成测试。
+- 完成（新增）：粗粒度动作空间 `A` 与 `PrimitiveKind → CoarsePrimitive` 全射投影；`v2/vla_bridge.py` 把 baseline VLA 的动作采样读成 `TaskBelief`，使单体策略可以用与本方法完全相同的代码打分。
 - 未完成：真实 evidence checkpoint、真实 action-outcome critic、OpenVLA/Octo/ASA executor service、BenchV0 scenarios 的 v0.2 数据重建与主实验。
-- 下一步：修 benchmark scenarios，生成同初态多候选 paired outcomes，并开始 far/near、closed/open、rotate/remove 的 evidence/effect calibration 实验。
+- 未运行：`vla_bridge` 与 `CoarsePrimitive` 的代码已写完并附单元测试，但尚未在装有 π0.5 与 LIBERO 的机器上端到端执行过。在 Interactive-Perception 的 reproduction gate 通过之前，任何由此产生的数字都不构成证据。
+- 下一步：在 Interactive-Perception 上跑 π0.5（`pi05_libero`）的 prompt ladder，取得 `capability` vs `implicit` 的配对差值以区分"决策缺失"与"技能缺失"，再生成同初态多候选 paired outcomes，开始 far/near、closed/open、rotate/remove 的 evidence/effect calibration 实验。

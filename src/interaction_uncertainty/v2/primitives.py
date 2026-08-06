@@ -34,6 +34,72 @@ class PrimitiveKind(str, Enum):
 TERMINAL_KINDS = frozenset({PrimitiveKind.DIRECT_ACT, PrimitiveKind.STOP_NOT_FOUND})
 
 
+class CoarsePrimitive(str, Enum):
+    """The reporting-level action space ``A`` used for baseline comparison.
+
+    :class:`PrimitiveKind` is the execution vocabulary: it distinguishes a
+    drawer from a hinged door because the two need different parameters and
+    different affordances.  That resolution is unusable when scoring a
+    monolithic VLA, which emits joint deltas and no primitive label at all.
+
+    ``A`` is the coarser space every method can be scored in.  Its members are
+    separated by *what information the action produces*, not by how the action
+    is executed: revealing a hidden region, resolving a label surface, closing
+    distance on a small target, executing the task, or abstaining.  Container
+    opening therefore folds into :attr:`REMOVE_OCCLUDER` -- a drawer front is an
+    occluder that happens to be attached to a joint.
+
+    :attr:`NOT_FOUND` has no realizable decoding from continuous actions.  That
+    is a finding rather than a gap: a policy with no abstention channel cannot
+    abstain, so its evidence for this member is structurally zero.
+    """
+
+    ACT = "ACT"
+    NOT_FOUND = "NOT_FOUND"
+    ROTATE = "ROTATE"
+    MOVE_CLOSER = "MOVE_CLOSER"
+    REMOVE_OCCLUDER = "REMOVE_OCCLUDER"
+
+
+COARSE_ACTION_SPACE: tuple[CoarsePrimitive, ...] = (
+    CoarsePrimitive.ACT,
+    CoarsePrimitive.NOT_FOUND,
+    CoarsePrimitive.ROTATE,
+    CoarsePrimitive.MOVE_CLOSER,
+    CoarsePrimitive.REMOVE_OCCLUDER,
+)
+
+
+COARSE_BY_PRIMITIVE: dict[PrimitiveKind, CoarsePrimitive] = {
+    PrimitiveKind.DIRECT_ACT: CoarsePrimitive.ACT,
+    PrimitiveKind.STOP_NOT_FOUND: CoarsePrimitive.NOT_FOUND,
+    PrimitiveKind.ROTATE_TO_LABEL: CoarsePrimitive.ROTATE,
+    PrimitiveKind.BRING_CLOSER: CoarsePrimitive.MOVE_CLOSER,
+    PrimitiveKind.PICK_AND_INSPECT: CoarsePrimitive.MOVE_CLOSER,
+    PrimitiveKind.OPEN_CONTAINER: CoarsePrimitive.REMOVE_OCCLUDER,
+    PrimitiveKind.PULL_DRAWER: CoarsePrimitive.REMOVE_OCCLUDER,
+    PrimitiveKind.UNCOVER: CoarsePrimitive.REMOVE_OCCLUDER,
+    PrimitiveKind.CLEAR_OCCLUDER: CoarsePrimitive.REMOVE_OCCLUDER,
+    PrimitiveKind.PUSH_ASIDE: CoarsePrimitive.REMOVE_OCCLUDER,
+}
+
+
+PRIMITIVES_BY_COARSE: dict[CoarsePrimitive, tuple[PrimitiveKind, ...]] = {
+    coarse: tuple(
+        kind for kind, mapped in COARSE_BY_PRIMITIVE.items() if mapped is coarse
+    )
+    for coarse in COARSE_ACTION_SPACE
+}
+
+
+def to_coarse(kind: PrimitiveKind) -> CoarsePrimitive:
+    """Project an execution primitive onto the reporting action space ``A``."""
+
+    if not isinstance(kind, PrimitiveKind):
+        raise TypeError("kind must be a PrimitiveKind")
+    return COARSE_BY_PRIMITIVE[kind]
+
+
 @dataclass(frozen=True)
 class NoParameters:
     def to_dict(self) -> dict[str, object]:
