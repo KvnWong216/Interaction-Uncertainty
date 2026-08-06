@@ -166,9 +166,23 @@ class AttributionConfig:
     nearly hard-assigned, a large value spreads a sample across anchors and
     raises dissonance.  ``alignment_floor`` discards motion pointing away from
     every anchor so that wandering does not manufacture evidence.
+
+    **``motion_scale`` must be calibrated to the policy's action units, and the
+    units are usually not metres.**  A controller such as LIBERO's ``OSC_POSE``
+    consumes commands normalized to ``[-1, 1]`` per step, so a ten-step chunk
+    sums to something of order one to ten rather than of order a centimetre.
+    The default here is the measured median net translation of ``pi05_libero``
+    on the Interactive-Perception scenes (samples spanned 1.1 to 9.3, median
+    6.0).
+
+    Getting this wrong is quiet rather than loud.  If every sample exceeds the
+    scale, decisiveness saturates at one for all of them, ``S`` becomes ``K+N``
+    exactly, and vacuity is a constant that no longer depends on the
+    observation -- the quantity still plots, it just measures nothing.  Callers
+    should watch the saturated fraction reported alongside each probe.
     """
 
-    motion_scale: float = 0.05
+    motion_scale: float = 6.0
     temperature: float = 0.25
     alignment_floor: float = 0.0
 

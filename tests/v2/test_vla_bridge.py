@@ -33,6 +33,14 @@ ANCHORS = (
 )
 
 
+# Scales are in the policy's own action units, not metres. LIBERO's OSC_POSE
+# takes commands normalized to [-1, 1] per step, so a chunk's net translation is
+# of order one to ten; DECISIVE and TIMID bracket AttributionConfig.motion_scale
+# in that regime rather than in the metre-scale one the first draft assumed.
+DECISIVE = 12.0
+TIMID = 0.05
+
+
 def _samples(direction: tuple[float, float, float], *, count: int, scale: float):
     unit = np.asarray(direction, dtype=np.float64)
     unit = unit / np.linalg.norm(unit)
@@ -60,7 +68,7 @@ def test_stationary_samples_report_maximum_vacuity() -> None:
 
 
 def test_decisive_agreement_collapses_vacuity_and_dissonance() -> None:
-    belief = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=0.2))
+    belief = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=DECISIVE))
     report = summarize_task_uncertainty(belief)
     assert report.vacuity < 0.2
     assert report.dissonance < 0.1
@@ -75,8 +83,8 @@ def test_split_commitment_raises_dissonance_without_raising_vacuity() -> None:
     evidence, so vacuity stays low; what rises is dissonance.
     """
 
-    samples = _samples((1.0, 0.0, 0.0), count=8, scale=0.2) + _samples(
-        (0.0, 1.0, 0.0), count=8, scale=0.2
+    samples = _samples((1.0, 0.0, 0.0), count=8, scale=DECISIVE) + _samples(
+        (0.0, 1.0, 0.0), count=8, scale=DECISIVE
     )
     belief = _belief(samples)
     report = summarize_task_uncertainty(belief)
@@ -92,8 +100,8 @@ def test_evidence_total_is_not_the_sample_count() -> None:
     vacuity would be identical for a committed and a dithering policy.
     """
 
-    decisive = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=0.2))
-    timid = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=0.002))
+    decisive = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=DECISIVE))
+    timid = _belief(_samples((1.0, 0.0, 0.0), count=16, scale=TIMID))
     assert decisive.hypotheses.strength > timid.hypotheses.strength
     assert summarize_task_uncertainty(timid).vacuity > summarize_task_uncertainty(
         decisive
@@ -103,15 +111,15 @@ def test_evidence_total_is_not_the_sample_count() -> None:
 def test_motion_supporting_no_hypothesis_yields_no_evidence() -> None:
     """Decisive travel away from every anchor is vacuity, not support."""
 
-    away = _samples((0.0, -1.0, -1.0), count=12, scale=0.4)
+    away = _samples((0.0, -1.0, -1.0), count=12, scale=DECISIVE)
     belief = _belief(away, config=AttributionConfig(alignment_floor=0.1))
     assert summarize_task_uncertainty(belief).vacuity == pytest.approx(1.0)
 
 
 def test_decisiveness_saturates_at_motion_scale() -> None:
-    config = AttributionConfig(motion_scale=0.05)
+    config = AttributionConfig(motion_scale=6.0)
     attributions = attribute_samples(
-        _samples((1.0, 0.0, 0.0), count=1, scale=0.5),
+        _samples((1.0, 0.0, 0.0), count=1, scale=DECISIVE),
         eef_position=EEF,
         anchors=ANCHORS,
         config=config,
@@ -141,20 +149,20 @@ def test_from_chunk_rejects_malformed_chunks() -> None:
 def test_bridge_rejects_degenerate_hypothesis_sets() -> None:
     with pytest.raises(ValueError):
         attribute_samples(
-            _samples((1.0, 0.0, 0.0), count=1, scale=0.1),
+            _samples((1.0, 0.0, 0.0), count=1, scale=DECISIVE),
             eef_position=EEF,
             anchors=ANCHORS[:1],
         )
     with pytest.raises(ValueError):
         attribute_samples(
-            _samples((1.0, 0.0, 0.0), count=1, scale=0.1),
+            _samples((1.0, 0.0, 0.0), count=1, scale=DECISIVE),
             eef_position=EEF,
             anchors=(HypothesisAnchor("a", (1.0, 0.0, 0.0)), HypothesisAnchor("a", (0.0, 1.0, 0.0))),
         )
     with pytest.raises(ValueError):
         # An anchor sitting on the end effector has no defined direction.
         attribute_samples(
-            _samples((1.0, 0.0, 0.0), count=1, scale=0.1),
+            _samples((1.0, 0.0, 0.0), count=1, scale=DECISIVE),
             eef_position=EEF,
             anchors=(HypothesisAnchor("a", EEF), HypothesisAnchor("b", (0.0, 1.0, 0.0))),
         )
@@ -166,7 +174,7 @@ def test_bridge_requires_a_prompt_and_samples() -> None:
     with pytest.raises(ValueError):
         action_induced_belief(
             prompt="   ",
-            samples=_samples((1.0, 0.0, 0.0), count=1, scale=0.1),
+            samples=_samples((1.0, 0.0, 0.0), count=1, scale=DECISIVE),
             eef_position=EEF,
             anchors=ANCHORS,
         )
